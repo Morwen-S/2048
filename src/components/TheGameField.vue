@@ -1,9 +1,11 @@
 <template>
   <div class="game-container">
     <div class="grid-container">
+      <div class="cell" v-for="cell in fieldList" :style="cellStyle(cell)">
+        {{ cell.value ? cell.value : '' }}
+      </div>
       <div class="grid-row" v-for="row in field" :key="row">
         <div class="grid-cell" v-for="x in row" :key="row + x">
-          <div class="cell-value" v-if="x.value" :style="'background-color:' + cellStyle(x.value)">{{ x.value }}</div>
         </div>
       </div>
     </div>
@@ -20,7 +22,8 @@ export default {
   setup () {
     const size = 4
     const field = ref(createField(size))
-    window.addEventListener('keydown', moveCell)
+    const fieldList = ref(createValueList(field.value))
+    window.addEventListener('keypress', moveCell)
 
     function createField (size) {
       let field = []
@@ -33,6 +36,19 @@ export default {
       createRandomCell(field)
       createRandomCell(field)
       return field
+    }
+    function createValueList (field) {
+      let values = []
+      field.forEach((row, y) => {
+        row.forEach((cell, x) => {
+          if (cell.value) {
+            cell.x = x
+            cell.y = y
+            values.push(cell)
+          }
+        })
+      })
+      return values
     }
 
     function createRandomCell (field) {
@@ -101,39 +117,67 @@ export default {
         }
       }
       if (count > 0) {
-        createRandomCell(newField)
+        createRandomCell(field.value)
       }
-      // checkField()
+      fieldList.value = createValueList(field.value)
+      checkField()
     }
 
-    // function checkField () {
-    //   let isHasEmptyCell = false
-    //   let isPossibleMoves = false
-    //   for (let y = 0; y < size; y++) {
-    //     for (let x = 0; x < size; x++ ) {
-    //       if (!field.value[y][x].value) {
-    //         isHasEmptyCell = true
-    //         break
-    //       }
-    //
-    //       if (y - 1 >= 0) {
-    //         isHasEmptyCell
-    //       }
-    //
-    //     }
-    //   }
-    // }
+    function checkField () {
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++ ) {
+          if (!field.value[y][x].value) {
+            return
+          }
 
-    function cellStyle (value) {
-      let color = 240
-      if (value < 64) {
-        color = 240 - value * 2
+          if (y - 1 >= 0) {
+            if (field.value[y][x].value === field.value[y - 1][x].value) {
+              return
+            }
+          }
+          if (y + 1 < size) {
+            if (field.value[y][x].value === field.value[y + 1][x].value) {
+              return
+            }
+          }
+          if (x - 1 >= 0) {
+            if (field.value[y][x].value === field.value[y][x - 1].value) {
+              return
+            }
+          }
+          if (x + 1 < size) {
+            if (field.value[y][x].value === field.value[y][x + 1].value) {
+              return
+            }
+          }
+        }
       }
-      return 'rgb(255, ' + color + ', 240)'
+      alert('Game Over!')
+    }
+
+    function cellStyle (cell) {
+      let style = `transform: translate(${cell.x * 122.5}px, ${cell.y * 122.5}px); ` + 'background-color: '
+      if (cell.value === 2) {
+        style += '#eee4da'
+      }
+      if (cell.value === 4) {
+        style += '#eee1c9'
+      }
+      if (cell.value === 8) {
+        style += '#f3b27a'
+      }
+      if (cell.value === 16) {
+        style += '#f69664'
+      }
+      if (cell.value === 32) {
+        style += '#f77c5f'
+      }
+      return style
     }
 
     return {
       field,
+      fieldList,
       moveCell,
       cellStyle
     }
@@ -181,16 +225,39 @@ export default {
   background-color: #767676;
 }
 
-.cell-value {
-  position: relative;
+.cell {
+  position: absolute;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 55px;
   font-weight: bold;
   z-index: 2;
-  width: 100%;
-  height: 100%;
+  width: 112.5px;
+  height: 112.5px;
   border-radius: 5px;
+}
+
+.bounce-enter-active {
+  animation: bounce-in .5s;
+}
+.bounce-leave-active {
+  animation: bounce-in .5s reverse;
+}
+
+@keyframes move {
+  from { top: 0; left: 0; }
+  to   { top: 100px; left: 100px; }
+}
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>
